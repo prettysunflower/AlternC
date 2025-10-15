@@ -1,0 +1,29 @@
+name: Build Docker images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "new-api"]
+    tags: [ "*" ]
+
+jobs:
+  acls:
+    runs-on: ubuntu-latest-prettysunflower
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: extractions/setup-just@v3
+
+      - name: Building package
+        run: just build_dpkg
+        working-directory: api
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: alternc-api-debian
+          path: api/alternc-api.deb

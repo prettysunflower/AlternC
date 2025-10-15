@@ -43,6 +43,4 @@ bureau/locales/nl_NL/LC_MESSAGES/messages.po~
 bureau/locales/pt_BR/LC_MESSAGES/messages.po~
 .tx/alternc.alternc
 # Added for running tests; currently not used otherwise
-composer.lock
-composer.json
 vendor/

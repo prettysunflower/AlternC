@@ -1,0 +1,9 @@
+Package: alternc-api
+Architecture: all
+Version: <version>
+Maintainer: prettysunflower <me@prettysunflower.moe>
+Section: admin
+Depends: debianutils (>= 1.13.1), alternc (>= 3.0)
+Priority: optional
+Homepage: https://git.prettysunflower.moe/prettysunflower/AlternC
+Description: REST API for AlternC

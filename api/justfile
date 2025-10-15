@@ -1,0 +1,18 @@
+version := "1.0"
+
+build_dpkg:
+    mkdir alternc-api
+    mkdir -p alternc-api/usr/share/alternc/panel/admin/api
+    mkdir -p alternc-api/etc/alternc/apache-panel.d
+    mkdir -p alternc-api/DEBIAN
+
+    cd panel && composer install
+    cd panel && composer dump-autoload
+
+    cp -r panel/* alternc-api/usr/share/alternc/panel/admin/api/
+    cp api.conf alternc-api/etc/alternc/apache-panel.d/
+    cp debian-pkg/control alternc-api/DEBIAN/
+
+    version="{{version}}-$(git rev-parse --short HEAD)" && sed -i -e "s/<version>/$version/g" alternc-api/DEBIAN/control
+
+    dpkg-deb --root-owner-group -b alternc-api

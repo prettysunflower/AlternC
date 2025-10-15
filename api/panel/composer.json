@@ -1,0 +1,19 @@
+{
+  "name": "alternc/api",
+  "description": "API for AlternC",
+  "minimum-stability": "stable",
+  "authors": [],
+  "require": {
+    "altorouter/altorouter": "^2.0",
+    "firebase/php-jwt": "^6.11",
+    "ext-sodium": "*",
+    "ext-json": "*",
+    "ext-pdo": "*",
+    "doctrine/dbal": "^4.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Alternc\\API\\": "src/"
+    }
+  }
+}
