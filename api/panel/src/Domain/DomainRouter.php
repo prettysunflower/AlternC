@@ -4,15 +4,19 @@ namespace Alternc\API\Domain;
 
 use Alternc\API\APIResponse;
 use Alternc\API\Auth\User;
+use Alternc\API\RequestType;
+use Alternc\API\Router;
 use AltoRouter;
 use Doctrine\DBAL\Connection;
 
-class Router {
+class DomainRouter extends Router {
     public function __construct(AltoRouter $router) {
-        $router->map("GET", "/domains", [$this, "get_all_domains"]);
-        $router->map("POST", "/domains", [$this, "add_domain"]);
-        $router->map("GET", "/domains/[*:domain_name]", [$this, "get_domain_by_name"]);
-        $router->map("DELETE", "/domains/[*:domain_name]", [$this, "delete_domain"]);
+        $router->addRoutes(routes: [
+            RequestType::GET->route("/domains", [$this, "get_all_domains"]),
+            RequestType::POST->route("/domains", [$this, "add_domain"]),
+            RequestType::GET->route("/domains/[*:domain_name]", [$this, "get_domain_by_name"]),
+            RequestType::DELETE->route("/domains/[*:domain_name]", [$this, "delete_domain"])
+        ]);
     }
 
     /**
