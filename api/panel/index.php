@@ -66,7 +66,15 @@ if( is_array($match) && is_callable( $match['target'] ) ) {
         // No db parameter, do not a database connection to the function
     }
 
-    $result = call_user_func_array( $match['target'], $params);
+    try {
+        $result = call_user_func_array($match['target'], $params);
+    } catch (\Doctrine\DBAL\Exception $e) {
+        error_log("DATABASE EXCEPTION:" . $e->getMessage());
+        return_api_response(APIResponse::internal_server_error(["error" => "Database error"]));
+    } catch (Exception $e) {
+        error_log("EXCEPTION:" . $e->getMessage());
+        return_api_response(APIResponse::internal_server_error(["error" => "Internal server error"]));
+    }
 
     if ($result instanceof APIResponse) {
         return_api_response($result);

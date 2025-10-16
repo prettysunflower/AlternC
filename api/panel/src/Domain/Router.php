@@ -15,7 +15,11 @@ class Router {
         $router->map("DELETE", "/domains/[*:domain_name]", [$this, "delete_domain"]);
     }
 
-    public function get_all_domains(User $user, Connection $db) {
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function get_all_domains(User $user, Connection $db): APIResponse
+    {
         $query_builder = Domain::query_builder($db);
 
         if (!$user->is_admin) {
@@ -31,7 +35,10 @@ class Router {
         return APIResponse::ok(["domains" => $domains]);
     }
 
-    public function get_domain_by_name(User $user, Connection $db, string $domain_name)
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function get_domain_by_name(User $user, Connection $db, string $domain_name): APIResponse
     {
         $query_builder = Domain::query_builder($db)
             ->where("domaine = :domain_name")
@@ -52,7 +59,8 @@ class Router {
         return APIResponse::ok(["domain" => new Domain(...$domain)]);
     }
 
-    public function add_domain(User $user) {
+    public function add_domain(User $user): APIResponse
+    {
         global $dom;
 
         if (!isset($_POST["domain_name"]) || !isset($_POST["dns"])) {
@@ -91,7 +99,11 @@ class Router {
         return APIResponse::ok(["domain_id" => $domain_id]);
     }
 
-    public function delete_domain(User $user, Connection $db, string $domain_name) {
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function delete_domain(User $user, Connection $db, string $domain_name): APIResponse
+    {
         global $dom;
 
         if (!$user->is_admin) {
