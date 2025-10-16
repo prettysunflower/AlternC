@@ -82,7 +82,7 @@ class Auth {
             'nbf' => $iat,
             'exp' => $exp,
             'sub' => $user->uid,
-            'su' => $user->su,
+            'su' => $user->is_admin,
         ];
 
         $jwt = JWT::encode($payload, $privateKey, 'EdDSA');
