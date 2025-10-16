@@ -64,9 +64,9 @@ class Auth {
 
         try {
             $user = User::login($username, $password, $db);
-        } catch (DisabledAccount $e) {
+        } catch (DisabledAccount) {
             return APIResponse::unauthorized(["error" => "Account disabled"]);
-        } catch (PasswordInvalid $e) {
+        } catch (PasswordInvalid) {
             return APIResponse::unauthorized(["error" => "Invalid password"]);
         }
 
@@ -91,11 +91,7 @@ class Auth {
         );
     }
 
-    public static function verify_auth(?Connection $db = null): int {
-        if (is_null($db)) {
-            $db = DB::pdo();
-        }
-
+    public static function verify_auth(Connection $db): int {
         $keyPair = Auth::get_signing_keypair($db);
         $publicKey = base64_encode(sodium_crypto_sign_publickey($keyPair));
 

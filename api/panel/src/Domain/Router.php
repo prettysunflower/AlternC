@@ -3,13 +3,9 @@
 namespace Alternc\API\Domain;
 
 use Alternc\API\APIResponse;
-use Alternc\API\Auth\Auth;
 use Alternc\API\Auth\User;
-use Alternc\API\DB;
 use AltoRouter;
-use Exception;
-use m_dom;
-use PDO;
+use Doctrine\DBAL\Connection;
 
 class Router {
     public function __construct(AltoRouter $router) {
@@ -19,22 +15,13 @@ class Router {
         $router->map("DELETE", "/domains/[*:domain_name]", [$this, "delete_domain"]);
     }
 
-    public function get_all_domains() {
-        $db = DB::pdo();
-
-        try {
-            $uid = Auth::verify_auth($db);
-            $user = User::from_uid($uid, $db);
-        } catch (Exception) {
-            return APIResponse::unauthorized(["error" => "Unauthorized"]);
-        }
-
+    public function get_all_domains(User $user, Connection $db) {
         $query_builder = Domain::query_builder($db);
 
         if (!$user->is_admin) {
             $query_builder = $query_builder
                 ->where("compte = :uid")
-                ->setParameter("uid", $uid);
+                ->setParameter("uid", $user->uid);
         }
 
         $domains = array_map(function($domain) {
@@ -44,17 +31,8 @@ class Router {
         return APIResponse::ok(["domains" => $domains]);
     }
 
-    public function get_domain_by_name($domain_name)
+    public function get_domain_by_name(User $user, Connection $db, string $domain_name)
     {
-        $db = DB::pdo();
-
-        try {
-            $uid = Auth::verify_auth($db);
-            $user = User::from_uid($uid, $db);
-        } catch (Exception) {
-            return APIResponse::unauthorized(["error" => "Unauthorized"]);
-        }
-
         $query_builder = Domain::query_builder($db)
             ->where("domaine = :domain_name")
             ->setParameter("domain_name", $domain_name);
@@ -62,7 +40,7 @@ class Router {
         if (!$user->is_admin) {
             $query_builder = $query_builder
                 ->where("compte = :uid")
-                ->setParameter("uid", $uid);
+                ->setParameter("uid", $user->uid);
         }
 
         $domain = $query_builder->fetchAssociative();
@@ -74,19 +52,8 @@ class Router {
         return APIResponse::ok(["domain" => new Domain(...$domain)]);
     }
 
-    public function add_domain() {
+    public function add_domain(User $user) {
         global $dom;
-
-        $db = DB::pdo();
-
-        try {
-            $uid = Auth::verify_auth($db);
-            $user = User::from_uid($uid, $db);
-            global $cuid;
-            $cuid = $uid;
-        } catch (Exception) {
-            return APIResponse::unauthorized(["error" => "Unauthorized"]);
-        }
 
         if (!isset($_POST["domain_name"]) || !isset($_POST["dns"])) {
             return APIResponse::bad_request(["error" => "Missing required parameters"]);
@@ -124,26 +91,15 @@ class Router {
         return APIResponse::ok(["domain_id" => $domain_id]);
     }
 
-    public function delete_domain($domain_name) {
+    public function delete_domain(User $user, Connection $db, string $domain_name) {
         global $dom;
 
-        $db = DB::pdo();
-
-        try {
-            $uid = Auth::verify_auth($db);
-            $user = User::from_uid($uid, $db);
-            global $cuid;
-            $cuid = $uid;
-        } catch (Exception) {
-            return APIResponse::unauthorized(["error" => "Unauthorized"]);
-        }
-
         if (!$user->is_admin) {
-            $query = Domain::query_builder()
+            $query = Domain::query_builder($db)
                 ->where("domaine = :domain_name")
                 ->where("compte = :uid")
                 ->setParameter("domain_name", $domain_name)
-                ->setParameter("uid", $uid);
+                ->setParameter("uid", $user->uid);
             $query = $query->fetchAssociative();
             if (empty($query)) {
                 return APIResponse::forbidden(["error" => "You are not allowed to delete this domain"]);
