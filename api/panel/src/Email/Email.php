@@ -7,6 +7,7 @@ use Doctrine\DBAL\Connection;
 class Email {
     public int $id;
     public string $address;
+    public int $domain_id;
     public string $domain;
     public bool $enabled;
     public ?string $path;
@@ -22,17 +23,21 @@ class Email {
      * @param int $id
      * @param string $address
      * @param bool $enabled
+     * @param int $domain_id
      * @param string $domain
-     * @param string $path
-     * @param int $quota
-     * @param int $used
-     * @param bool $islocal
+     * @param string|null $path
+     * @param int|null $quota
+     * @param int|null $used
+     * @param bool $is_local
      * @param string $type
+     * @param string|null $last_login
+     * @param string|null $recipients
      */
     public function __construct(
         int $id,
         string $address,
         bool $enabled,
+        int $domain_id,
         string $domain,
         ?string $path,
         ?int $quota,
@@ -45,6 +50,7 @@ class Email {
         $this->id         = $id;
         $this->address    = $address;
         $this->enabled    = $enabled;
+        $this->domain_id  = $domain_id;
         $this->domain     = $domain;
         $this->path       = $path;
         $this->quota      = $quota;
@@ -72,6 +78,7 @@ class Email {
                 'a.id',
                 'a.address',
                 'a.enabled',
+                'a.domain_id',
                 'd.domaine AS domain',
                 'm.path',
                 'm.quota',
@@ -87,5 +94,26 @@ class Email {
             ->leftJoin('a', 'dovecot_quota', 'q', 'CONCAT(a.address, "@", d.domaine) = q.user')
             ->leftJoin('a', 'recipient', 'r', 'r.address_id = a.id')
             ->orderBy('address');
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public static function from_name(string $local_part, string $domain_name, Connection $db): ?Email {
+        $query_builder = Email::query_builder($db)
+                              ->where(
+                                  "a.address = :local_part",
+                                  "d.domaine = :domain_name"
+                              )
+                              ->setParameter("local_part", $local_part)
+                              ->setParameter("domain_name", $domain_name);
+
+        $email = $query_builder->fetchAssociative();
+
+        if (empty($email)) {
+            return null;
+        }
+
+        return new Email(...$email);
     }
 }

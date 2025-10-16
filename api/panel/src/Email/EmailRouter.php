@@ -15,6 +15,8 @@ class EmailRouter extends Router {
         $router->addRoutes(routes: [
             RequestType::GET->route("/emails", [$this, "get_all_mx_managed_domains"]),
             RequestType::GET->route("/emails/[*:domain_name]", [$this, "get_email_addresses_for_domain"]),
+            RequestType::POST->route("/emails/[*:domain_name]/[*:local_part]", [$this, "create_email_address"]),
+            RequestType::DELETE->route("/emails/[*:domain_name]/[*:local_part]", [$this, "delete_email_address"])
         ]);
     }
 
@@ -63,5 +65,65 @@ class EmailRouter extends Router {
         }, $query_builder->fetchAllAssociative());
 
         return APIResponse::ok(["emails" => $emails]);
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function create_email_address(
+        User $user,
+        Connection $db,
+        string $domain_name,
+        string $local_part
+    ): APIResponse {
+        $domain = Domain::from_name($domain_name, $db);
+
+        if (!$domain->can_access_domain($user)) {
+            return APIResponse::forbidden(["error" => "You do not have access to this domain"]);
+        }
+
+        $email = Email::from_name($local_part, $domain_name, $db);
+
+        if (!empty($email)) {
+            return APIResponse::conflict(["error" => "This email address already exists"]);
+        }
+
+        global $mail;
+
+        $did = $mail->create($domain->id, $local_part, "");
+
+        if (!$did) {
+            return APIResponse::internal_server_error(["error" => "Failed to create email address"]);
+        } else {
+            return APIResponse::created(["status" => "created", "email" => $local_part . "@" . $domain_name]);
+        }
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function delete_email_address(User $user, Connection $db, string $domain_name, string $local_part): APIResponse
+    {
+        $domain = Domain::from_name($domain_name, $db);
+
+        if (!$domain->can_access_domain($user)) {
+            return APIResponse::forbidden(["error" => "You do not have access to this domain"]);
+        }
+
+        $email = Email::from_name($local_part, $domain_name, $db);
+
+        if (empty($email)) {
+            return APIResponse::not_found(["error" => "This email address doesn't exist"]);
+        }
+
+        global $mail;
+
+        $did = $mail->delete($email->id);
+
+        if (!$did) {
+            return APIResponse::internal_server_error(["error" => "Failed to create email address"]);
+        } else {
+            return APIResponse::ok(["status" => "deleted", "email" => $local_part . "@" . $domain_name]);
+        }
     }
 }

@@ -2,12 +2,13 @@
 
 namespace Alternc\API\Domain;
 
+use Alternc\API\Auth\User;
 use Doctrine\DBAL\Connection;
 
 class Domain {
     public int $id;
     public string $name;
-    public string $owner_uid;
+    public int $owner_uid;
     public bool $managed_dns;
     public bool $managed_mx;
     public bool $no_erase;
@@ -29,7 +30,7 @@ class Domain {
     public function __construct(
         int $id,
         string $name,
-        string $owner_uid,
+        int $owner_uid,
         bool $managed_dns,
         bool $managed_mx,
         bool $no_erase,
@@ -80,5 +81,38 @@ class Domain {
         return array_map(function($domain) {
             return new Domain(...$domain);
         }, $queryBuilder->fetchAllAssociative());
+    }
+
+    static function from_id(int $ids, Connection $db): ?Domain
+    {
+        $domains = self::from_ids([$ids], $db);
+        if (empty($domains)) {
+            return null;
+        }
+        return $domains[0];
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    static function from_name(string $name, Connection $db): ?Domain
+    {
+        $query_builder = Domain::query_builder($db)
+                               ->where("domaine = :domain_name")
+                               ->setParameter("domain_name", $name);
+        $domain = $query_builder->fetchAssociative();
+        if (empty($domain)) {
+            return null;
+        }
+        return new Domain(...$domain);
+    }
+
+    function can_access_domain(User $user): bool
+    {
+        if ($user->is_admin) {
+            return true;
+        }
+
+        return $this->owner_uid == $user->uid;
     }
 }

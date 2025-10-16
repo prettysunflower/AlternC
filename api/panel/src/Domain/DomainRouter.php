@@ -44,19 +44,9 @@ class DomainRouter extends Router {
      */
     public function get_domain_by_name(User $user, Connection $db, string $domain_name): APIResponse
     {
-        $query_builder = Domain::query_builder($db)
-            ->where("domaine = :domain_name")
-            ->setParameter("domain_name", $domain_name);
+        $domain = Domain::from_name($domain_name, $db);
 
-        if (!$user->is_admin) {
-            $query_builder = $query_builder
-                ->where("compte = :uid")
-                ->setParameter("uid", $user->uid);
-        }
-
-        $domain = $query_builder->fetchAssociative();
-
-        if (empty($domain)) {
+        if (empty($domain) || !$domain->can_access_domain($user)) {
             return APIResponse::not_found(["error" => "Domain not found"]);
         }
 
@@ -110,16 +100,10 @@ class DomainRouter extends Router {
     {
         global $dom;
 
-        if (!$user->is_admin) {
-            $query = Domain::query_builder($db)
-                ->where("domaine = :domain_name")
-                ->where("compte = :uid")
-                ->setParameter("domain_name", $domain_name)
-                ->setParameter("uid", $user->uid);
-            $query = $query->fetchAssociative();
-            if (empty($query)) {
-                return APIResponse::forbidden(["error" => "You are not allowed to delete this domain"]);
-            }
+        $domain = Domain::from_name($domain_name, $db);
+
+        if (empty($domain) || !$domain->can_access_domain($user)) {
+            return APIResponse::not_found(["error" => "Domain not found"]);
         }
 
         $result = $dom->del_domain($domain_name);

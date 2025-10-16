@@ -17,6 +17,11 @@ class APIResponse {
         return new self($data, 200);
     }
 
+    public static function created($data)
+    {
+        return new self($data, 201);
+    }
+
     public static function bad_request($data)
     {
         return new self($data, 400);
@@ -39,5 +44,9 @@ class APIResponse {
 
     public static function internal_server_error($data) {
         return new self($data, 500);
+    }
+
+    public static function conflict($data) {
+        return new self($data, 409);
     }
 }
