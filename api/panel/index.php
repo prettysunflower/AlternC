@@ -34,7 +34,7 @@ $match = $router->match();
 
 if( is_array($match) && is_callable( $match['target'] ) ) {
     $params = $match['params'];
-    $db = DB::pdo();
+    $db_connection = DB::pdo();
 
     try {
         // Check if the target function has a user parameter
@@ -42,8 +42,8 @@ if( is_array($match) && is_callable( $match['target'] ) ) {
 
         $userParameter = new ReflectionParameter($match['target'], 'user');
         try {
-            $uid = Auth::verify_auth($db);
-            $user = User::from_uid($uid, $db);
+            $uid = Auth::verify_auth($db_connection);
+            $user = User::from_uid($uid, $db_connection);
         } catch (Exception) {
             return_api_response(APIResponse::unauthorized(["error" => "Unauthorized"]));
         }
@@ -61,7 +61,7 @@ if( is_array($match) && is_callable( $match['target'] ) ) {
 
     try {
         $dbParameter = new ReflectionParameter($match['target'], 'db');
-        $params["db"] = $db;
+        $params["db"] = $db_connection;
     } catch (ReflectionException $e) {
         // No db parameter, do not a database connection to the function
     }
